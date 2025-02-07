@@ -1,19 +1,25 @@
 import sqlite3
 
-# Connect to SQLite database (creates if not exists)
-conn = sqlite3.connect("users.db")
+DB_PATH = "users.db"
+
+# Connect to SQLite database
+conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 
-# Create users table if not exists
-cursor.execute('''CREATE TABLE IF NOT EXISTS users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    password TEXT NOT NULL
-                )''')
+# Drop the existing table (⚠ WARNING: This will delete all users)
+cursor.execute("DROP TABLE IF EXISTS users")
 
-# Commit & close
+# Recreate the table with the correct structure
+cursor.execute('''
+    CREATE TABLE users (
+        username TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL
+    )
+''')
+
 conn.commit()
 conn.close()
 
-print("Database setup completed.")
-
+print("✅ Database reset successfully.")
