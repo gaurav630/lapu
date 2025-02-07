@@ -1,6 +1,42 @@
 import streamlit as st
-from auth import register_user, authenticate_user
+import sqlite3
+import subprocess
+from auth import authenticate_user
 
+DB_PATH = "users.db"
+
+def register_user(username, password):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    # Ensure table exists
+    cursor.execute("CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)")
+    
+    # Check if user exists
+    cursor.execute("SELECT * FROM users WHERE username=?", (username,))
+    if cursor.fetchone():
+        conn.close()
+        return False  # Username already taken
+    
+    # Insert new user
+    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+    conn.commit()
+    conn.close()
+    
+    # Commit and push changes to GitHub
+    commit_and_push_changes()
+    
+    return True
+
+def commit_and_push_changes():
+    try:
+        subprocess.run(["git", "add", DB_PATH], check=True)
+        subprocess.run(["git", "commit", "-m", "Update users.db with new signup"], check=True)
+        subprocess.run(["git", "push", "origin", "main"], check=True)  # Change 'main' if needed
+    except Exception as e:
+        print(f"Git commit/push failed: {e}")
+
+# Streamlit UI
 st.title("Login System with SQLite")
 
 menu = ["Login", "Sign Up"]
